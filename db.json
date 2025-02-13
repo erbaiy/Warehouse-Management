@@ -1,8 +1,8 @@
 {
   "products": [
     {
-      "id": "1",
-      "name": "Laptop HP Pavilionhvcc",
+      "id": 1,
+      "name": "Laptop HP Pavilion",
       "type": "Informatique",
       "barcode": "1234567890123",
       "price": 1200,
@@ -35,15 +35,11 @@
         {
           "warehousemanId": 1333,
           "at": "2025-02-02"
-        },
-        {
-          "warehousemanId": "1333",
-          "at": "2025-02-13"
         }
       ]
     },
     {
-      "id": "2",
+      "id": 2,
       "name": "Clavier Mécanique Logitech",
       "type": "Accessoires",
       "barcode": "9876543210987",
@@ -80,7 +76,7 @@
       ]
     },
     {
-      "id": "3",
+      "id": 3,
       "name": "Pc Gamer Omen By HP",
       "type": "Informatique",
       "barcode": "1236543210987",
@@ -94,11 +90,122 @@
           "at": "2025-02-02"
         }
       ]
+    },
+    {
+      "id": "9f83",
+      "name": "Ggfdkv",
+      "type": "Ggddf",
+      "barcode": "Ggggg",
+      "price": 28,
+      "supplier": "Asdf",
+      "image": "",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-13"
+        }
+      ]
+    },
+    {
+      "id": "dd34",
+      "name": "Hshsbvsvs",
+      "type": "Hshshh",
+      "barcode": "1737748",
+      "price": 884,
+      "supplier": "Gsgsgsgg",
+      "image": "",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-13"
+        }
+      ]
+    },
+    {
+      "id": "1367",
+      "name": "Xxxxxxxxxxxx",
+      "type": "Xxxxxxxxx",
+      "barcode": "77778888",
+      "price": 886,
+      "supplier": "Xxxxxxx",
+      "image": "",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-13"
+        }
+      ]
+    },
+    {
+      "id": "58c7",
+      "name": "Qqqq",
+      "type": "Qqqqqqq",
+      "barcode": "177366",
+      "price": 5408,
+      "supplier": "Qqwqqq",
+      "image": "",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-13"
+        }
+      ]
+    },
+    {
+      "id": "66a8",
+      "name": "Bbbbbbbb",
+      "type": "Bbnnnnnn",
+      "barcode": "Bbbbbbbb",
+      "price": 96,
+      "supplier": "Bbbbb",
+      "image": "",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-13"
+        }
+      ]
+    },
+    {
+      "id": "73d6",
+      "name": "Rrrrrrr",
+      "type": "Rrrrrr",
+      "barcode": "14442",
+      "price": 686,
+      "supplier": "Rrrrrr",
+      "image": "",
+      "stocks": [
+        {
+          "id": 1739462261923,
+          "name": "Rrrrr",
+          "quantity": 15,
+          "localisation": {
+            "city": "Fddd",
+            "latitude": 5585,
+            "longitude": 2863
+          }
+        }
+      ],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-13"
+        },
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-13"
+        }
+      ]
     }
   ],
   "warehousemans": [
     {
-      "id": "1333",
+      "id": 1333,
       "name": "Amine Boutaleb",
       "dob": "1988-05-02",
       "city": "Oujda",
@@ -106,7 +213,7 @@
       "warehouseId": 1999
     },
     {
-      "id": "1444",
+      "id": 1444,
       "name": "Karim El Mansouri",
       "dob": "1990-09-15",
       "city": "Marrakesh",

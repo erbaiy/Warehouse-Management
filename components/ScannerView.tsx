@@ -1,5 +1,3 @@
-
-
 // components/ScannerView.tsx
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Dimensions, Text, TouchableOpacity } from 'react-native';
