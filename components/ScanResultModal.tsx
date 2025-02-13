@@ -601,7 +601,7 @@ return (
               onPress={handleAddProduct}
             >
               <Text style={styles.submitButtonText}>Next: Add Stock</Text>
-            </TouchableOpacity>>
+            </TouchableOpacity>
           </ScrollView>
         )}
       </View>
