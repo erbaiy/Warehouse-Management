@@ -1,41 +1,64 @@
-// // app/(tabs)/index.tsx
-// import React from 'react';
-// import { View, StyleSheet, StatusBar } from 'react-native';
-
-// const HomeScreen = () => {
-//   return (
-//     <View style={styles.container}>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: 'black',
-//   },
-// });
-
-// export default HomeScreen;&
-
-
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import apiClient from '@/config/axios';
 
 const HomeScreen = () => {
   const router = useRouter();
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalWarehouses: 0,
+    outOfStockProducts: 0,
+    totalStockValue: 0,
+    recentlyAdded: [], // Initialize as empty array
+    recentlyRemoved: [], // Initialize as empty array
+  });
+  const [loading, setLoading] = useState(true); // Add loading state
+
+  // Fetch statistics from the API
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        const response = await apiClient.get('/statistics'); // Replace with your API endpoint
+        const data = response.data;
+        setStats({
+          totalProducts: data.totalProducts,
+          totalWarehouses: data.totalWarehouses,
+          outOfStockProducts: data.outOfStockProducts,
+          totalStockValue: data.totalStockValue,
+          recentlyAdded: data.recentlyAdded || [], // Fallback to empty array if undefined
+          recentlyRemoved: data.recentlyRemoved || [], // Fallback to empty array if undefined
+        });
+      } catch (error) {
+        console.error('Error fetching statistics', error);
+      } finally {
+        setLoading(false); // Set loading to false after fetching
+      }
+    };
+
+    fetchStatistics();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF9F43" />
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Warehouse Management</Text>
-        <Text style={styles.subtitle}>Scan and manage your inventory</Text>
+        <Text style={styles.subtitle}>Optimize your inventory management</Text>
       </View>
 
+      {/* Quick Actions */}
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
           style={styles.scanButton}
@@ -72,17 +95,60 @@ const HomeScreen = () => {
         </View>
       </View>
 
+      {/* Statistics Section */}
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>150</Text>
-          <Text style={styles.statLabel}>Total Products</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>24</Text>
-          <Text style={styles.statLabel}>Low Stock</Text>
+        <Text style={styles.sectionTitle}>Statistics</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.totalProducts}</Text>
+            <Text style={styles.statLabel}>Total Products</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.totalWarehouses}</Text>
+            <Text style={styles.statLabel}>Total Warehouses</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.outOfStockProducts}</Text>
+            <Text style={styles.statLabel}>Out of Stock</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>${stats.totalStockValue.toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Total Stock Value</Text>
+          </View>
         </View>
       </View>
-    </View>
+
+      {/* Recently Added/Removed Products */}
+      <View style={styles.recentActivityContainer}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <View style={styles.activityGrid}>
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>Recently Added</Text>
+            {stats.recentlyAdded.length > 0 ? (
+              stats.recentlyAdded.map((product, index) => (
+                <Text key={index} style={styles.activityText}>
+                  {product.name} - {product.quantity} units
+                </Text>
+              ))
+            ) : (
+              <Text style={styles.activityText}>No recently added products</Text>
+            )}
+          </View>
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>Recently Removed</Text>
+            {stats.recentlyRemoved.length > 0 ? (
+              stats.recentlyRemoved.map((product, index) => (
+                <Text key={index} style={styles.activityText}>
+                  {product.name} - {product.quantity} units
+                </Text>
+              ))
+            ) : (
+              <Text style={styles.activityText}>No recently removed products</Text>
+            )}
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 };
 
@@ -91,6 +157,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1A1A1A', // Dark theme background
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1A1A1A',
   },
   header: {
     marginTop: 40,
@@ -153,9 +225,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   statsContainer: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 15,
+  },
+  statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginTop: 20,
   },
   statCard: {
     backgroundColor: '#2D2D2D', // Dark theme card
@@ -163,6 +244,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '48%',
     alignItems: 'center',
+    marginBottom: 15,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -178,6 +260,35 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 14,
     color: '#CCCCCC',
+  },
+  recentActivityContainer: {
+    marginBottom: 30,
+  },
+  activityGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  activityCard: {
+    backgroundColor: '#2D2D2D', // Dark theme card
+    padding: 15,
+    borderRadius: 12,
+    width: '48%',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+  },
+  activityTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 10,
+  },
+  activityText: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    marginBottom: 5,
   },
 });
 
