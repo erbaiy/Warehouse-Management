@@ -2,6 +2,8 @@ import apiClient from '@/config/axios';
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import  generatePDF from '../../components/PDFReportGenerator';
+import ProductPDFButton from '../../components/PDFReportGenerator';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -226,12 +228,36 @@ const ProductList = () => {
               <Text style={{ color: theme.secondaryText }}>Type: {product.type}</Text>
               <Text style={{ color: theme.secondaryText }}>Supplier: {product.supplier}</Text>
               <Text style={{ color: theme.text }}>Price: ${product.price}</Text>
-              <View style={styles.stockContainer}>
-                <Text style={styles.stockInfo}>
-                  {outOfStock ? 'Out of Stock' : `In Stock: ${totalStock}`}
-                </Text>
-              </View>
-            </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+  <View style={styles.stockContainer}>
+    <Text style={styles.stockInfo}>
+      {outOfStock ? 'Out of Stock' : `In Stock: ${totalStock}`}
+    </Text>
+    <Ionicons
+      name={outOfStock ? 'alert-circle' : 'checkmark-circle'} 
+      size={16}
+      color={outOfStock ? theme.outOfStockText : '#4caf50'}
+    />
+  </View>
+  
+
+
+  <ProductPDFButton product={product} theme={theme} />
+ {/* <TouchableOpacity 
+  style={{ 
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.cardBackground,
+    padding: 8,
+    borderRadius: 6
+  }}
+  onPress={() => generatePDF([product])}
+>
+  <Ionicons name="document-outline" size={20} color={theme.text} />
+</TouchableOpacity>  */}
+              </View>      
+             </View>
+
           </View>
         );
       })}

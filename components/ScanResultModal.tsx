@@ -539,7 +539,7 @@ return (
   disabled={!newStock.name || !newStock.quantity || !newStock.city}
 >
   <Text style={styles.submitButtonText}>Add Stock</Text>
-</TouchableOpacity>
+     </TouchableOpacity>
           </ScrollView>
         ) : (
           <ScrollView style={styles.formContainer}>
