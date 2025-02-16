@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import apiClient from '@/config/axios';
+import { calculateStatistics } from '@/utils/statistics';
 
 const HomeScreen = () => {
   const router = useRouter();
@@ -15,30 +16,38 @@ const HomeScreen = () => {
     recentlyRemoved: [], // Initialize as empty array
   });
   const [loading, setLoading] = useState(true); // Add loading state
+  const [refreshing, setRefreshing] = useState(false); // Add refreshing state
 
   // Fetch statistics from the API
-  useEffect(() => {
-    const fetchStatistics = async () => {
-      try {
-        const response = await apiClient.get('/statistics'); // Replace with your API endpoint
-        const data = response.data;
-        setStats({
-          totalProducts: data.totalProducts,
-          totalWarehouses: data.totalWarehouses,
-          outOfStockProducts: data.outOfStockProducts,
-          totalStockValue: data.totalStockValue,
-          recentlyAdded: data.recentlyAdded || [], // Fallback to empty array if undefined
-          recentlyRemoved: data.recentlyRemoved || [], // Fallback to empty array if undefined
-        });
-      } catch (error) {
-        console.error('Error fetching statistics', error);
-      } finally {
-        setLoading(false); // Set loading to false after fetching
-      }
-    };
+// In your HomeScreen component:
+const fetchStatistics = async () => {
+  try {
+    const response = await apiClient.get('/products'); // Fetch products data
+    const products = response.data;
 
+    // Calculate statistics
+    const stats = calculateStatistics(products);
+    console.log('Calculated statistics:', stats);
+
+    // Update state
+    setStats(stats);
+  } catch (error) {
+    console.error('Error fetching statistics', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  useEffect(() => {
+    console.log('Fetching statistics...');
     fetchStatistics();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchStatistics();
+    setRefreshing(false);
+  };
 
   if (loading) {
     return (
@@ -49,7 +58,17 @@ const HomeScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#FF9F43']} // Customize the refresh spinner color
+          tintColor="#FF9F43" // Customize the refresh spinner color (iOS)
+        />
+      }
+    >
       <StatusBar barStyle="light-content" />
       
       {/* Header */}
