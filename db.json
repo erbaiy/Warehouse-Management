@@ -1,45 +1,26 @@
 {
   "products": [
     {
-      "id": 1,
+      "id": "1",
       "name": "Laptop HP Pavilion",
       "type": "Informatique",
-      "barcode": "1234567890123",
       "price": 1200,
-      "solde": 1100,
-      "supplier": "HP",
-      "image": "https://mediazone.ma/uploads/images/products/16412/landing-page/assets/images/swiper-1.png",
+      "barcode": "1234567890123",
       "stocks": [
         {
           "id": 1999,
-          "name": "Gueliz B2",
-          "quantity": 21,
-          "localisation": {
-            "city": "Marrakesh",
-            "latitude": 31.628674,
-            "longitude": -7.992047
-          }
-        },
-        {
-          "id": 2991,
-          "name": "Lazari H2",
-          "quantity": 24,
-          "localisation": {
-            "city": "Oujda",
-            "latitude": 34.689404,
-            "longitude": -1.912823
-          }
+          "quantity": 216
         }
       ],
       "editedBy": [
         {
-          "warehousemanId": 1333,
-          "at": "2025-02-02"
+          "warehousemanId": 1,
+          "at": "2025-02-14"
         }
       ]
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "Clavier Mécanique Logitech",
       "type": "Accessoires",
       "barcode": "9876543210987",
@@ -76,7 +57,7 @@
       ]
     },
     {
-      "id": 3,
+      "id": "3",
       "name": "Pc Gamer Omen By HP",
       "type": "Informatique",
       "barcode": "1236543210987",
@@ -92,120 +73,86 @@
       ]
     },
     {
-      "id": "9f83",
-      "name": "Ggfdkv",
-      "type": "Ggddf",
-      "barcode": "Ggggg",
-      "price": 28,
-      "supplier": "Asdf",
-      "image": "",
-      "stocks": [],
-      "editedBy": [
-        {
-          "warehousemanId": 1333,
-          "at": "2025-02-13"
-        }
-      ]
-    },
-    {
-      "id": "dd34",
-      "name": "Hshsbvsvs",
-      "type": "Hshshh",
-      "barcode": "1737748",
-      "price": 884,
-      "supplier": "Gsgsgsgg",
-      "image": "",
-      "stocks": [],
-      "editedBy": [
-        {
-          "warehousemanId": 1333,
-          "at": "2025-02-13"
-        }
-      ]
-    },
-    {
-      "id": "1367",
-      "name": "Xxxxxxxxxxxx",
-      "type": "Xxxxxxxxx",
-      "barcode": "77778888",
-      "price": 886,
-      "supplier": "Xxxxxxx",
-      "image": "",
-      "stocks": [],
-      "editedBy": [
-        {
-          "warehousemanId": 1333,
-          "at": "2025-02-13"
-        }
-      ]
-    },
-    {
-      "id": "58c7",
-      "name": "Qqqq",
-      "type": "Qqqqqqq",
-      "barcode": "177366",
-      "price": 5408,
-      "supplier": "Qqwqqq",
-      "image": "",
-      "stocks": [],
-      "editedBy": [
-        {
-          "warehousemanId": 1333,
-          "at": "2025-02-13"
-        }
-      ]
-    },
-    {
-      "id": "66a8",
-      "name": "Bbbbbbbb",
-      "type": "Bbnnnnnn",
-      "barcode": "Bbbbbbbb",
-      "price": 96,
-      "supplier": "Bbbbb",
-      "image": "",
-      "stocks": [],
-      "editedBy": [
-        {
-          "warehousemanId": 1333,
-          "at": "2025-02-13"
-        }
-      ]
-    },
-    {
-      "id": "73d6",
-      "name": "Rrrrrrr",
-      "type": "Rrrrrr",
-      "barcode": "14442",
-      "price": 686,
-      "supplier": "Rrrrrr",
+      "id": "b8e0",
+      "name": "Gsgsggsg",
+      "type": "Shhsggsgv",
+      "barcode": "12678",
+      "price": 84884,
+      "supplier": "Gsgsg",
       "image": "",
       "stocks": [
         {
-          "id": 1739462261923,
-          "name": "Rrrrr",
-          "quantity": 15,
+          "id": 1739565137852,
+          "name": "Uwhgegveh",
+          "quantity": 545,
           "localisation": {
-            "city": "Fddd",
-            "latitude": 5585,
-            "longitude": 2863
+            "city": "Aggwgwgg",
+            "latitude": 645,
+            "longitude": 64
           }
         }
       ],
       "editedBy": [
         {
           "warehousemanId": 1333,
-          "at": "2025-02-13"
+          "at": "2025-02-14"
         },
         {
           "warehousemanId": 1333,
-          "at": "2025-02-13"
+          "at": "2025-02-14"
+        }
+      ]
+    },
+    {
+      "id": "6076",
+      "name": "Gsgsggsg",
+      "type": "Shhsggsgv",
+      "barcode": "12678",
+      "price": 84884,
+      "supplier": "Gsgsg",
+      "image": "",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-14"
+        }
+      ]
+    },
+    {
+      "id": "20e4",
+      "name": "Moga",
+      "type": "Hsgwg",
+      "price": 646,
+      "supplier": "Ggwgw",
+      "image": "",
+      "stocks": [
+        {
+          "id": 1739735171524,
+          "name": "Moga",
+          "quantity": 4648,
+          "localisation": {
+            "city": "Gssg",
+            "latitude": 45,
+            "longitude": 64
+          }
+        }
+      ],
+      "editedBy": [
+        {
+          "warehousemanId": "1333",
+          "at": "2025-02-16"
+        },
+        {
+          "warehousemanId": "1333",
+          "at": "2025-02-16"
         }
       ]
     }
   ],
   "warehousemans": [
     {
-      "id": 1333,
+      "id": "1333",
       "name": "Amine Boutaleb",
       "dob": "1988-05-02",
       "city": "Oujda",
@@ -213,7 +160,7 @@
       "warehouseId": 1999
     },
     {
-      "id": 1444,
+      "id": "1444",
       "name": "Karim El Mansouri",
       "dob": "1990-09-15",
       "city": "Marrakesh",
@@ -222,10 +169,38 @@
     }
   ],
   "statistics": {
-    "totalProducts": 3,
+    "totalProducts": 6,
     "outOfStock": 1,
     "totalStockValue": 70,
-    "mostAddedProducts": [],
+    "mostAddedProducts": [
+      {
+        "product": {
+          "id": "b8e0",
+          "name": "Gsgsggsg",
+          "price": 84884
+        },
+        "quantity": 0,
+        "date": "2025-02-14T20:32:00.764Z"
+      },
+      {
+        "product": {
+          "id": "6076",
+          "name": "Gsgsggsg",
+          "price": 84884
+        },
+        "quantity": 0,
+        "date": "2025-02-14T20:48:23.705Z"
+      },
+      {
+        "product": {
+          "id": "20e4",
+          "name": "Moga",
+          "price": 646
+        },
+        "quantity": 0,
+        "date": "2025-02-16T19:45:56.891Z"
+      }
+    ],
     "mostRemovedProducts": []
   }
 }

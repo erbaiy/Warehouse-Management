@@ -161,14 +161,6 @@ const ProductList = () => {
   return (
     <ScrollView style={styles.container}>
       {/* Header with Search Bar and Icons */}
-      <View style={styles.header}>
-  <TouchableOpacity style={{ marginLeft: 10 }}>
-    <Ionicons name="notifications" size={24} color={theme.text} />
-  </TouchableOpacity>
-  <TouchableOpacity>
-    <Ionicons name="person" size={24} color={theme.text} />
-  </TouchableOpacity>
-</View>
 
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
