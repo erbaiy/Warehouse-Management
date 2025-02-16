@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import axios from 'axios';
-
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Modal, 
-  TouchableOpacity, 
-  ActivityIndicator, 
+import { updateStatistics } from '../services/productService';
+import Toast from 'react-native-toast-message';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  ActivityIndicator,
   Dimensions,
   Image,
   TextInput,
-  Alert,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from '@/config/axios';
+import axios from 'axios';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-interface editedBy {
+interface EditedBy {
   warehousemanId: number;
   at: string;
 }
@@ -36,29 +37,31 @@ interface Stock {
 }
 
 interface ScanResultModalProps {
-    isVisible: boolean;
-    onDismiss: () => void;
-    productData?: {
-      id: number;
-      name: string;
-      barcode: string;
-      stocks: Stock[];
-      type: string;
-      image: string;
-      price: number;
-      supplier: string;
-      editedBy: editedBy[];
-    } | null;
-    isLoading?: boolean;
-    onUpdateProduct?: (barcode: string, updatedData: any) => void;
+  isVisible: boolean;
+  onDismiss: () => void;
+  productData?: {
+    id: number;
+    name: string;
+    barcode: string;
+    stocks: Stock[];
+    type: string;
+    image: string;
+    price: number;
+    supplier: string;
+    editedBy: EditedBy[];
+  } | null;
+  isLoading?: boolean;
+  onUpdateProduct?: (barcode: string, updatedData: any) => void;
+  scannedBarcode: string;
 }
 
-export default function ScanResultModal({ 
-  isVisible, 
-  onDismiss, 
-  productData, 
+export default function ScanResultModal({
+  isVisible,
+  onDismiss,
+  productData,
   isLoading,
-  onUpdateProduct 
+  onUpdateProduct,
+  scannedBarcode,
 }: ScanResultModalProps) {
   const [activeTab, setActiveTab] = useState('info');
   const [editedProduct, setEditedProduct] = useState({
@@ -68,26 +71,27 @@ export default function ScanResultModal({
     type: '',
   });
 
-  const [isAddingProduct, setIsAddingProduct] = useState(true);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isAddingStock, setIsAddingStock] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<any>(null);
-  
+
   const [newProduct, setNewProduct] = useState({
     name: '',
     type: '',
     price: '',
-    barcode: '',
     supplier: '',
-    image: ''
+    image: '',
   });
-  
+
   const [newStock, setNewStock] = useState({
     name: '',
     quantity: '',
     city: '',
     latitude: '',
-    longitude: ''
+    longitude: '',
   });
+
+  const [showAddProductPrompt, setShowAddProductPrompt] = useState(false);
 
   useEffect(() => {
     if (productData) {
@@ -95,15 +99,14 @@ export default function ScanResultModal({
       setIsAddingStock(false);
       setEditedProduct({
         name: productData.name || '',
-        quantity: productData.stocks?.[0]?.quantity?.toString() || '',     
+        quantity: productData.stocks?.[0]?.quantity?.toString() || '',
         type: productData.type || '',
         price: productData.price?.toString() || '',
       });
-    } else {
-      setIsAddingProduct(true);
-      setIsAddingStock(false);
+    } else if (!isLoading) {
+      setShowAddProductPrompt(true);
     }
-  }, [productData]);
+  }, [productData, isLoading]);
 
   const getUserData = async () => {
     try {
@@ -115,11 +118,19 @@ export default function ScanResultModal({
     }
   };
 
+  const showToast = (type: 'success' | 'error', message: string) => {
+    Toast.show({
+      type,
+      text1: type === 'success' ? 'Success' : 'Error',
+      text2: message,
+    });
+  };
+
   const handleAddProduct = async () => {
     try {
       const userData = await getUserData();
       if (!userData) {
-        Alert.alert('Error', 'User data not found');
+        showToast('error', 'User data not found');
         return;
       }
 
@@ -128,34 +139,41 @@ export default function ScanResultModal({
       const productToAdd = {
         name: newProduct.name,
         type: newProduct.type,
-        barcode: newProduct.barcode || "temp-" + Date.now(),
+        barcode: scannedBarcode,
         price: parseFloat(newProduct.price) || 0,
         supplier: newProduct.supplier,
         image: newProduct.image,
         stocks: [],
-        editedBy: [{
-          warehousemanId: userData.id,
-          at: currentDate
-        }]
+        editedBy: [
+          {
+            warehousemanId: userData.id,
+            at: currentDate,
+          },
+        ],
       };
 
-      console.log('Creating new product:', productToAdd);
+      const statsResponse = await apiClient.get('statistics');
+      let currentStats = statsResponse.data;
 
-      const response = await axios.post('http://172.16.9.4:3000/products', productToAdd);
+      const productResponse = await apiClient.post('products', productToAdd);
 
-      if (response.status === 201) {
-        console.log('Product created successfully:', response.data);
-        setCreatedProduct(response.data);
+      if (productResponse.status === 201) {
+        const updatedStats = updateStatistics(currentStats, 'add', productResponse.data, 0);
+        await apiClient.put('statistics', updatedStats);
+
+        setCreatedProduct(productResponse.data);
         setIsAddingProduct(false);
         setIsAddingStock(true);
-        
+
         if (onUpdateProduct) {
-          onUpdateProduct(productToAdd.barcode, response.data);
+          onUpdateProduct(scannedBarcode, productResponse.data);
         }
+
+        showToast('success', 'Product added successfully');
       }
     } catch (error) {
       console.error('Error adding product:', error);
-      Alert.alert('Error', 'Failed to add product');
+      showToast('error', 'Failed to add product');
     }
   };
 
@@ -163,16 +181,13 @@ export default function ScanResultModal({
     try {
       const userData = await getUserData();
       if (!userData) {
-        Alert.alert('Error', 'User data not found');
+        showToast('error', 'User data not found');
         return;
       }
 
       const targetProduct = createdProduct || productData;
-      console.log('Target product for adding stock:', targetProduct);
-
       if (!targetProduct?.id) {
-        console.error('Product ID missing. Available data:', { createdProduct, productData });
-        Alert.alert('Error', 'Product ID is missing');
+        showToast('error', 'Product ID is missing');
         return;
       }
 
@@ -183,11 +198,11 @@ export default function ScanResultModal({
         localisation: {
           city: newStock.city,
           latitude: parseFloat(newStock.latitude) || 0,
-          longitude: parseFloat(newStock.longitude) || 0
-        }
+          longitude: parseFloat(newStock.longitude) || 0,
+        },
       };
 
-      const getCurrentProduct = await axios.get(`http://172.16.9.4:3000/products/${targetProduct.id}`);
+      const getCurrentProduct = await apiClient.get(`products/${targetProduct.id}`);
       const currentProduct = getCurrentProduct.data;
 
       const updatedProduct = {
@@ -197,140 +212,88 @@ export default function ScanResultModal({
           ...(currentProduct.editedBy || []),
           {
             warehousemanId: userData.id,
-            at: new Date().toISOString().split('T')[0]
-          }
-        ]
+            at: new Date().toISOString().split('T')[0],
+          },
+        ],
       };
 
-      console.log('Updating product with new stock:', updatedProduct);
-
-      const response = await axios.put(
-        `http://172.16.9.4:3000/products/${targetProduct.id}`,
-        updatedProduct
-      );
+      const response = await apiClient.put(`products/${targetProduct.id}`, updatedProduct);
 
       if (response.status === 200) {
-        console.log('Stock added successfully:', response.data);
-        
         if (onUpdateProduct) {
           onUpdateProduct(updatedProduct.barcode, response.data);
         }
 
-        Alert.alert(
-          'Success',
-          'Stock added successfully',
-          [{
-            text: 'OK',
-            onPress: () => {
-              setNewStock({
-                name: '',
-                quantity: '',
-                city: '',
-                latitude: '',
-                longitude: ''
-              });
-              setCreatedProduct(null);
-              onDismiss();
-            }
-          }]
-        );
+        showToast('success', 'Stock added successfully');
+        setNewStock({
+          name: '',
+          quantity: '',
+          city: '',
+          latitude: '',
+          longitude: '',
+        });
+        setCreatedProduct(null);
+        onDismiss();
       }
     } catch (error) {
       console.error('Error adding stock:', error);
-      Alert.alert('Error', 'Failed to add stock. Please try again.');
+      showToast('error', 'Failed to add stock');
     }
   };
 
   const handleUpdate = async () => {
     try {
       if (!productData?.id) {
-        Alert.alert('Error', 'Product ID is missing');
+        showToast('error', 'Product ID is missing');
         return;
       }
 
       const userData = await getUserData();
       if (!userData) {
-        Alert.alert('Error', 'User data not found');
-        return;
-      }
-
-      const response = await axios.get(`http://172.16.9.4:3000/products/${productData.id}`);
-      const currentProduct = response.data;
-
-      if (!currentProduct) {
-        Alert.alert('Error', 'Product not found in database');
+        showToast('error', 'User data not found');
         return;
       }
 
       const currentDate = new Date().toISOString().split('T')[0];
 
       const updatedData = {
-        ...currentProduct,
-        name: editedProduct.name || currentProduct.name,
-        type: editedProduct.type || currentProduct.type,
-        price: parseFloat(editedProduct.price) || currentProduct.price,
-        stocks: currentProduct.stocks.map((stock: Stock) => {
-          if (stock.id === currentProduct.stocks[0].id) {
-            return {
-              ...stock,
-              quantity: parseInt(editedProduct.quantity) || stock.quantity
-            };
+        id: productData.id,
+        name: editedProduct.name,
+        type: editedProduct.type,
+        price: parseFloat(editedProduct.price),
+        barcode: scannedBarcode,
+        stocks: [
+          {
+            id: productData.stocks?.[0]?.id || 1,
+            quantity: parseInt(editedProduct.quantity),
           }
-          return stock;
-        }),
+        ],
         editedBy: [
-          ...(currentProduct.editedBy || []),
           {
             warehousemanId: userData.id,
-            at: currentDate
+            at: currentDate,
           }
         ]
       };
 
-      const updateResponse = await axios.put(
-        `http://172.16.9.4:3000/products/${productData.id}`,
-        updatedData
-      );
+      const updateResponse = await apiClient.put(`products/${productData.id}`, updatedData);
 
       if (updateResponse.status === 200) {
-        Alert.alert(
-          'Success',
-          'Product updated successfully',
-          [{
-            text: 'OK',
-            onPress: () => {
-              if (onUpdateProduct) {
-                onUpdateProduct(productData.barcode, updateResponse.data);
-              }
-              onDismiss();
-            }
-          }]
-        );
+        showToast('success', 'Product updated successfully');
+        if (onUpdateProduct) {
+          onUpdateProduct(scannedBarcode, updateResponse.data);
+        }
+        onDismiss();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating product:', error);
-      Alert.alert('Error', 'Failed to update product');
+      showToast('error', 'Failed to update product');
     }
   };
 
   const validateStockForm = () => {
-    const targetProduct = createdProduct || productData;
-    
-    if (!targetProduct?.id) {
-      console.error('Product ID missing in validation. Available data:', { createdProduct, productData });
-      Alert.alert('Error', 'Product ID is missing');
-      return false;
-    }
-    if (!newStock.name) {
-      Alert.alert('Error', 'Stock name is required');
-      return false;
-    }
-    if (!newStock.quantity) {
-      Alert.alert('Error', 'Quantity is required');
-      return false;
-    }
-    if (!newStock.city) {
-      Alert.alert('Error', 'City is required');
+    if (!newStock.name || !newStock.quantity || !newStock.city) {
+      showToast('error', 'Please fill all required fields');
       return false;
     }
     return true;
@@ -342,281 +305,271 @@ export default function ScanResultModal({
     }
   };
 
+  const handleAddProductPrompt = () => {
+    setShowAddProductPrompt(false);
+    setIsAddingProduct(true);
+  };
 
-return (
-  <Modal
-    visible={isVisible}
-    transparent={true}
-    animationType="slide"
-    onRequestClose={onDismiss}
-  >
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalContent}>
-        <TouchableOpacity style={styles.closeButton} onPress={onDismiss}>
-          <MaterialCommunityIcons name="close" size={24} color="#666" />
-        </TouchableOpacity>
+  return (
+    <Modal visible={isVisible} transparent={true} animationType="slide" onRequestClose={onDismiss}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <TouchableOpacity style={styles.closeButton} onPress={onDismiss}>
+            <MaterialCommunityIcons name="close" size={24} color="#666" />
+          </TouchableOpacity>
 
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FF9F43" />
-            <Text style={styles.loadingText}>Searching for product...</Text>
-          </View>
-        ) : productData ? (
-          <>
-            <View style={styles.tabContainer}>
-              <TouchableOpacity 
-                style={[styles.tab, activeTab === 'info' && styles.activeTab]}
-                onPress={() => setActiveTab('info')}
-              >
-                <Text style={[styles.tabText, activeTab === 'info' && styles.activeTabText]}>Info</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.tab, activeTab === 'edit' && styles.activeTab]}
-                onPress={() => setActiveTab('edit')}
-              >
-                <Text style={[styles.tabText, activeTab === 'edit' && styles.activeTabText]}>Edit</Text>
-              </TouchableOpacity>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF9F43" />
+              <Text style={styles.loadingText}>Searching for product...</Text>
             </View>
-
-            {activeTab === 'info' ? (
-              <View style={styles.detailsContainer}>
-                {productData.image ? (
-                  <Image 
-                    source={{ uri: productData.image }} 
-                    style={styles.productImage}
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <View style={styles.noImageContainer}>
-                    <MaterialCommunityIcons name="image-off" size={50} color="#ccc" />
-                    <Text style={styles.noImageText}>No image available</Text>
-                  </View>
-                )}
-
-                <Text style={styles.productName}>{productData.name}</Text>
-                
-                <View style={styles.infoGrid}>
-                  <View style={styles.infoItem}>
-                    <MaterialCommunityIcons name="barcode" size={24} color="#FF9F43" />
-                    <Text style={styles.infoLabel}>Barcode</Text>
-                    <Text style={styles.infoValue}>{productData.barcode}</Text>
-                  </View>
-
-                  <View style={styles.infoItem}>
-                    <MaterialCommunityIcons name="shape" size={24} color="#FF9F43" />
-                    <Text style={styles.infoLabel}>Type</Text>
-                    <Text style={styles.infoValue}>{productData.type}</Text>
-                  </View>
-
-                  <View style={styles.infoItem}>
-                    <MaterialCommunityIcons name="package-variant" size={24} color="#FF9F43" />
-                    <Text style={styles.infoLabel}>Current Stock</Text>
-                    <Text style={styles.infoValue}>{productData.stocks?.[0]?.quantity || 0}</Text>
-                  </View>
-
-                  {productData.price && (
-                    <View style={styles.infoItem}>
-                      <MaterialCommunityIcons name="cash" size={24} color="#FF9F43" />
-                      <Text style={styles.infoLabel}>Price</Text>
-                      <Text style={styles.infoValue}>${productData.price}</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            ) : (
-              <View style={styles.editContainer}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editedProduct.name}
-                    onChangeText={(text) => setEditedProduct(prev => ({ ...prev, name: text }))}
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Quantity</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editedProduct.quantity}
-                    onChangeText={(text) => setEditedProduct(prev => ({ ...prev, quantity: text }))}
-                    keyboardType="numeric"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Price</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editedProduct.price}
-                    onChangeText={(text) => setEditedProduct(prev => ({ ...prev, price: text }))}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Type</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editedProduct.type}
-                    onChangeText={(text) => setEditedProduct(prev => ({ ...prev, type: text }))}
-                  />
-                </View>
-
-                <TouchableOpacity 
-                  style={styles.updateButton}
-                  onPress={handleUpdate}
+          ) : productData ? (
+            <>
+              <View style={styles.tabContainer}>
+                <TouchableOpacity
+                  style={[styles.tab, activeTab === 'info' && styles.activeTab]}
+                  onPress={() => setActiveTab('info')}
                 >
-                  <MaterialCommunityIcons name="check" size={24} color="white" />
-                  <Text style={styles.updateButtonText}>Update Product</Text>
+                  <Text style={[styles.tabText, activeTab === 'info' && styles.activeTabText]}>Info</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tab, activeTab === 'edit' && styles.activeTab]}
+                  onPress={() => setActiveTab('edit')}
+                >
+                  <Text style={[styles.tabText, activeTab === 'edit' && styles.activeTabText]}>Edit</Text>
                 </TouchableOpacity>
               </View>
-            )}
-          </>
-        ) : isAddingStock ? (
-          <ScrollView style={styles.formContainer}>
-            <Text style={styles.formTitle}>Add New Stock</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Stock Name</Text>
-              <TextInput
-                style={styles.input}
-                value={newStock.name}
-                onChangeText={(text) => setNewStock(prev => ({ ...prev, name: text }))}
-                placeholder="Enter stock name"
-              />
-            </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Quantity</Text>
-              <TextInput
-                style={styles.input}
-                value={newStock.quantity}
-                onChangeText={(text) => setNewStock(prev => ({ ...prev, quantity: text }))}
-                keyboardType="numeric"
-                placeholder="Enter quantity"
-              />
-            </View>
+              {activeTab === 'info' ? (
+                <View style={styles.detailsContainer}>
+                  {productData.image ? (
+                    <Image source={{ uri: productData.image }} style={styles.productImage} resizeMode="contain" />
+                  ) : (
+                    <View style={styles.noImageContainer}>
+                      <MaterialCommunityIcons name="image-off" size={50} color="#ccc" />
+                      <Text style={styles.noImageText}>No image available</Text>
+                    </View>
+                  )}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>City</Text>
-              <TextInput
-                style={styles.input}
-                value={newStock.city}
-                onChangeText={(text) => setNewStock(prev => ({ ...prev, city: text }))}
-                placeholder="Enter city"
-              />
-            </View>
+                  <Text style={styles.productName}>{productData.name}</Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Latitude</Text>
-              <TextInput
-                style={styles.input}
-                value={newStock.latitude}
-                onChangeText={(text) => setNewStock(prev => ({ ...prev, latitude: text }))}
-                keyboardType="decimal-pad"
-                placeholder="Enter latitude"
-              />
-            </View>
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoItem}>
+                      <MaterialCommunityIcons name="barcode" size={24} color="#FF9F43" />
+                      <Text style={styles.infoLabel}>Barcode</Text>
+                      <Text style={styles.infoValue}>{scannedBarcode}</Text>
+                    </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Longitude</Text>
-              <TextInput
-                style={styles.input}
-                value={newStock.longitude}
-                onChangeText={(text) => setNewStock(prev => ({ ...prev, longitude: text }))}
-                keyboardType="decimal-pad"
-                placeholder="Enter longitude"
-              />
-            </View>
+                    <View style={styles.infoItem}>
+                      <MaterialCommunityIcons name="shape" size={24} color="#FF9F43" />
+                      <Text style={styles.infoLabel}>Type</Text>
+                      <Text style={styles.infoValue}>{productData.type}</Text>
+                    </View>
 
-            <TouchableOpacity 
-  style={[
-    styles.submitButton,
-    (!newStock.name || !newStock.quantity || !newStock.city) && styles.submitButtonDisabled
-  ]}
-  onPress={handleSubmitStock}
-  disabled={!newStock.name || !newStock.quantity || !newStock.city}
->
-  <Text style={styles.submitButtonText}>Add Stock</Text>
-     </TouchableOpacity>
-          </ScrollView>
-        ) : (
-          <ScrollView style={styles.formContainer}>
-            <Text style={styles.formTitle}>Add New Product</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Barcode</Text>
-              <TextInput
-                style={styles.input}
-                value={newProduct.barcode || productData?.barcode}
-                onChangeText={(text) => setNewProduct(prev => ({ ...prev, barcode: text }))}
-                placeholder="Enter or scan barcode"
-              />
-            </View>
+                    <View style={styles.infoItem}>
+                      <MaterialCommunityIcons name="package-variant" size={24} color="#FF9F43" />
+                      <Text style={styles.infoLabel}>Current Stock</Text>
+                      <Text style={styles.infoValue}>{productData.stocks?.[0]?.quantity || 0}</Text>
+                    </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Name</Text>
-              <TextInput
-                style={styles.input}
-                value={newProduct.name}
-                onChangeText={(text) => setNewProduct(prev => ({ ...prev, name: text }))}
-                placeholder="Enter product name"
-              />
-            </View>
+                    {productData.price && (
+                      <View style={styles.infoItem}>
+                        <MaterialCommunityIcons name="cash" size={24} color="#FF9F43" />
+                        <Text style={styles.infoLabel}>Price</Text>
+                        <Text style={styles.infoValue}>${productData.price}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.editContainer}>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editedProduct.name}
+                      onChangeText={(text) => setEditedProduct((prev) => ({ ...prev, name: text }))}
+                    />
+                  </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Type</Text>
-              <TextInput
-                style={styles.input}
-                value={newProduct.type}
-                onChangeText={(text) => setNewProduct(prev => ({ ...prev, type: text }))}
-                placeholder="Enter product type"
-              />
-            </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Quantity</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editedProduct.quantity}
+                      onChangeText={(text) => setEditedProduct((prev) => ({ ...prev, quantity: text }))}
+                      keyboardType="numeric"
+                    />
+                  </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Price</Text>
-              <TextInput
-                style={styles.input}
-                value={newProduct.price}
-                onChangeText={(text) => setNewProduct(prev => ({ ...prev, price: text }))}
-                keyboardType="decimal-pad"
-                placeholder="Enter price"
-              />
-            </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Price</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editedProduct.price}
+                      onChangeText={(text) => setEditedProduct((prev) => ({ ...prev, price: text }))}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Supplier</Text>
-              <TextInput
-                style={styles.input}
-                value={newProduct.supplier}
-                onChangeText={(text) => setNewProduct(prev => ({ ...prev, supplier: text }))}
-                placeholder="Enter supplier"
-              />
-            </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Type</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editedProduct.type}
+                      onChangeText={(text) => setEditedProduct((prev) => ({ ...prev, type: text }))}
+                    />
+                  </View>
 
-           <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={handleAddProduct}
-            >
-              <Text style={styles.submitButtonText}>Next: Add Stock</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        )}
+                  <TouchableOpacity style={styles.updateButton} onPress={handleUpdate}>
+                    <MaterialCommunityIcons name="check" size={24} color="white" />
+                    <Text style={styles.updateButtonText}>Update Product</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
+          ) : isAddingStock ? (
+            <ScrollView style={styles.formContainer}>
+              <Text style={styles.formTitle}>Add New Stock</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Stock Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newStock.name}
+                  onChangeText={(text) => setNewStock((prev) => ({ ...prev, name: text }))}
+                  placeholder="Enter stock name"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Quantity</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newStock.quantity}
+                  onChangeText={(text) => setNewStock((prev) => ({ ...prev, quantity: text }))}
+                  keyboardType="numeric"
+                  placeholder="Enter quantity"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>City</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newStock.city}
+                  onChangeText={(text) => setNewStock((prev) => ({ ...prev, city: text }))}
+                  placeholder="Enter city"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Latitude</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newStock.latitude}
+                  onChangeText={(text) => setNewStock((prev) => ({ ...prev, latitude: text }))}
+                  keyboardType="decimal-pad"
+                  placeholder="Enter latitude"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Longitude</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newStock.longitude}
+                  onChangeText={(text) => setNewStock((prev) => ({ ...prev, longitude: text }))}
+                  keyboardType="decimal-pad"
+                  placeholder="Enter longitude"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.submitButton, (!newStock.name || !newStock.quantity || !newStock.city) && styles.submitButtonDisabled]}
+                onPress={handleSubmitStock}
+                disabled={!newStock.name || !newStock.quantity || !newStock.city}
+              >
+                <Text style={styles.submitButtonText}>Add Stock</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          ) : showAddProductPrompt ? (
+            <View style={styles.promptContainer}>
+              <Text style={styles.promptText}>Product not found. Would you like to add it?</Text>
+              <TouchableOpacity style={styles.promptButton} onPress={handleAddProductPrompt}>
+                <Text style={styles.promptButtonText}>Add Product</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <ScrollView style={styles.formContainer}>
+              <Text style={styles.formTitle}>Add New Product</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Barcode</Text>
+                <TextInput
+                  style={[styles.input, styles.disabledInput]}
+                  value={scannedBarcode}
+                  editable={false}
+                  placeholder="Scanned barcode"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newProduct.name}
+                  onChangeText={(text) => setNewProduct((prev) => ({ ...prev, name: text }))}
+                  placeholder="Enter product name"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Type</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newProduct.type}
+                  onChangeText={(text) => setNewProduct((prev) => ({ ...prev, type: text }))}
+                  placeholder="Enter product type"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Price</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newProduct.price}
+                  onChangeText={(text) => setNewProduct((prev) => ({ ...prev, price: text }))}
+                  keyboardType="decimal-pad"
+                  placeholder="Enter price"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Supplier</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newProduct.supplier}
+                  onChangeText={(text) => setNewProduct((prev) => ({ ...prev, supplier: text }))}
+                  placeholder="Enter supplier"
+                />
+              </View>
+
+              <TouchableOpacity style={styles.submitButton} onPress={handleAddProduct}>
+                <Text style={styles.submitButtonText}>Next: Add Stock</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+        </View>
       </View>
-    </View>
-  </Modal>
-);
-
-
+    </Modal>
+  );
 }
-
 
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -742,6 +695,10 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
   },
+  disabledInput: {
+    backgroundColor: '#f5f5f5',
+    color: '#666',
+  },
   updateButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -758,55 +715,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 10,
   },
-  notFoundContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  notFoundText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FF6B6B',
-    marginTop: 10,
-  },
-  notFoundSubText: {
-    color: '#666',
-    marginTop: 5,
-  },
-  addProductContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  addProductTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 10,
-  },
-  addProductSubTitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
   formContainer: {
     padding: 20,
     width: '100%',
     maxHeight: SCREEN_HEIGHT * 0.6,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FF9F43',
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
   },
   formTitle: {
     fontSize: 24,
@@ -830,5 +742,28 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
-  }
+  },
+  promptContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  promptText: {
+    fontSize: 18,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  promptButton: {
+    backgroundColor: '#FF9F43',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+  },
+  promptButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
