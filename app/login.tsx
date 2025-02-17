@@ -158,9 +158,10 @@ export default function LoginScreen() {
             editable={!loading}
           />
           <TouchableOpacity 
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
+  style={styles.eyeIcon}
+  onPress={() => setShowPassword(!showPassword)}
+  testID="eye-icon"
+>
             <Ionicons 
               name={showPassword ? "eye-off" : "eye"} 
               size={24} 

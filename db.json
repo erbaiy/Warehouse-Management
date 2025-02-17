@@ -21,38 +21,20 @@
     },
     {
       "id": "2",
-      "name": "Clavier Mécanique Logitech",
+      "name": "Azerty",
       "type": "Accessoires",
-      "barcode": "9876543210987",
       "price": 100,
-      "supplier": "Logitech",
-      "image": "https://in-media.apjonlinecdn.com/catalog/product/cache/b3b166914d87ce343d4dc5ec5117b502/8/a/8aa01aa.png",
+      "barcode": "9876543210987",
       "stocks": [
         {
           "id": 1999,
-          "name": "Gueliz B2",
-          "quantity": 20,
-          "localisation": {
-            "city": "Marrakesh",
-            "latitude": 31.628674,
-            "longitude": -7.992047
-          }
-        },
-        {
-          "id": 2991,
-          "name": "Lazari H2",
-          "quantity": 5,
-          "localisation": {
-            "city": "Oujda",
-            "latitude": 34.689404,
-            "longitude": -1.912823
-          }
+          "quantity": 20
         }
       ],
       "editedBy": [
         {
-          "warehousemanId": 1444,
-          "at": "2025-02-02"
+          "warehousemanId": "1333",
+          "at": "2025-02-17"
         }
       ]
     },
@@ -148,6 +130,22 @@
           "at": "2025-02-16"
         }
       ]
+    },
+    {
+      "id": "8d1d",
+      "name": "Hysuue",
+      "type": "Yssyd7",
+      "barcode": "586",
+      "price": 68,
+      "supplier": "Yssys",
+      "image": "",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": "1333",
+          "at": "2025-02-17"
+        }
+      ]
     }
   ],
   "warehousemans": [
@@ -169,7 +167,7 @@
     }
   ],
   "statistics": {
-    "totalProducts": 6,
+    "totalProducts": 7,
     "outOfStock": 1,
     "totalStockValue": 70,
     "mostAddedProducts": [
@@ -199,6 +197,15 @@
         },
         "quantity": 0,
         "date": "2025-02-16T19:45:56.891Z"
+      },
+      {
+        "product": {
+          "id": "8d1d",
+          "name": "Hysuue",
+          "price": 68
+        },
+        "quantity": 0,
+        "date": "2025-02-17T08:28:21.196Z"
       }
     ],
     "mostRemovedProducts": []
